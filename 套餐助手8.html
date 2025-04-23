@@ -1,0 +1,475 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中国电信资费管理系统</title>
+    <style>
+        /* 基础样式 */
+        body {
+            margin: 0;
+            font-family: -apple-system, system-ui, sans-serif;
+            background: #ffe6f2;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        /* 顶部信息栏 */
+        .header {
+            padding: 12px 24px;
+            background: #fff;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .system-info {
+            font-size: 14px;
+            color: #666;
+        }
+
+        /* 主容器 */
+        .container {
+            max-width: 1200px;
+            margin: 24px auto;
+            padding: 0 16px;
+        }
+
+        /* 导航按钮 */
+        .nav-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .nav-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            background: #ff69b4;
+            color: white;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .nav-btn:hover {
+            background: #ff1493;
+        }
+
+        /* 内容区域 */
+        .content-section {
+            background: white;
+            padding: 24px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            min-height: 400px;
+        }
+
+        /* 输入组 */
+        .input-group {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        input, select, textarea {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 240px;
+            font-size: 14px;
+        }
+
+        /* 结果展示 */
+        .result-card {
+            padding: 20px;
+            margin: 16px 0;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .result-card h3 {
+            margin: 0 0 12px 0;
+            color: #e60012;
+        }
+
+        /* 数据表格 */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .data-table th, .data-table td {
+            padding: 12px;
+            border: 1px solid #eee;
+            text-align: left;
+        }
+
+        /* 登录弹窗 */
+        .login-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .login-box {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            width: 300px;
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 登录弹窗 -->
+    <div class="login-modal" id="loginModal">
+        <div class="login-box">
+            <h3>管理员登录</h3>
+            <input type="text" class="login-input" id="loginAccount" placeholder="输入账号">
+            <input type="password" class="login-input" id="loginPassword" placeholder="输入密码">
+            <div style="margin-top:20px; text-align:right">
+                <button class="nav-btn" onclick="attemptLogin()">登录</button>
+                <button class="nav-btn" style="background:#666" onclick="hideLogin()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="header">
+        <div class="system-info">
+            <span id="currentDate"></span> | 
+            <span>🌤️ 甘肃定西 7~23℃</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <nav class="nav-bar">
+            <button class="nav-btn active" data-target="package">查套餐</button>
+            <button class="nav-btn" data-target="cost">查费用</button>
+            <button class="nav-btn" data-target="cloud">云产品</button>
+            <button class="nav-btn" data-target="manage">数据维护</button>
+        </nav>
+
+        <!-- 查套餐界面 -->
+        <section id="package" class="content-section">
+            <div class="input-group">
+                <input type="number" placeholder="输入套餐金额（元）" id="packageFee">
+                <button onclick="searchPackage()">立即查询</button>
+            </div>
+            <div id="packageResults"></div>
+        </section>
+
+        <!-- 查费用界面 -->
+        <section id="cost" class="content-section" style="display:none">
+            <div class="input-group">
+                <input type="number" placeholder="预期流量（GB）" id="dataInput">
+                <input type="number" placeholder="预期通话（分钟）" id="callInput">
+                <button onclick="recommendPackage()">智能推荐</button>
+            </div>
+            <div id="costResults"></div>
+        </section>
+
+        <!-- 云产品界面 -->
+        <section id="cloud" class="content-section" style="display:none">
+            <div class="input-group">
+                <select id="cloudType">
+                    <option value="host">云主机</option>
+                    <option value="pc">云电脑</option>
+                </select>
+                <div id="cloudConfig">
+                    <input type="number" id="vcpu" placeholder="vCPU数量">
+                    <input type="number" id="ram" placeholder="内存(GB)">
+                </div>
+                <button onclick="calculatePrice()">计算费用</button>
+            </div>
+            <div id="cloudResults"></div>
+        </section>
+
+        <!-- 数据维护界面 -->
+        <section id="manage" class="content-section" style="display:none">
+            <div class="input-group">
+                <input type="text" id="planName" placeholder="套餐名称">
+                <input type="number" id="planFee" placeholder="价格（元）">
+            </div>
+            <div class="input-group">
+                <input type="number" id="domesticData" placeholder="国内流量（GB）">
+                <input type="number" id="localData" placeholder="省内流量（GB）">
+            </div>
+            <div class="input-group">
+                <input type="number" id="callTime" placeholder="通话时长（分钟）">
+                <input type="text" id="remark" placeholder="套餐备注">
+            </div>
+            <div class="input-group">
+                <button class="nav-btn" onclick="savePlan()">保存套餐</button>
+                <button class="nav-btn" style="background:#666" onclick="clearForm()">清空</button>
+            </div>
+            
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>套餐名称</th>
+                        <th>价格</th>
+                        <th>国内流量</th>
+                        <th>省内流量</th>
+                        <th>通话时长</th>
+                        <th>备注</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="planList"></tbody>
+            </table>
+        </section>
+    </div>
+
+    <script>
+        // 系统配置
+        const ADMIN_ACCOUNT = "17793280221";
+        const ADMIN_PASSWORD = "txt147258@+";
+        let isAuthenticated = false;
+
+        // 套餐数据
+        let packages = JSON.parse(localStorage.getItem('telecomPlans')) || [
+            {
+                name: "5G畅享套餐",
+                fee: 139,
+                domesticData: 30,
+                localData: 20,
+                call: 1200,
+                remark: "首月优惠20元"
+            }
+        ];
+
+        // 系统初始化
+        function init() {
+            // 设置日期
+            document.getElementById('currentDate').textContent = 
+                new Date().toLocaleDateString('zh-CN', { 
+                    year: 'numeric', 
+                    month: '2-digit', 
+                    day: '2-digit',
+                    weekday: 'long'
+                });
+
+            // 绑定导航事件
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const target = this.dataset.target;
+                    
+                    // 权限验证
+                    if (target === 'manage' && !isAuthenticated) {
+                        showLogin();
+                        return;
+                    }
+
+                    // 切换界面
+                    document.querySelectorAll('.content-section').forEach(section => 
+                        section.style.display = 'none');
+                    document.getElementById(target).style.display = 'block';
+
+                    // 更新按钮状态
+                    document.querySelectorAll('.nav-btn').forEach(b => 
+                        b.classList.remove('active'));
+                    this.classList.add('active');
+
+                    // 初始化数据表格
+                    if (target === 'manage') refreshPlanList();
+                });
+            });
+
+            // 初始化云产品配置
+            document.getElementById('cloudType').addEventListener('change', function() {
+                document.getElementById('cloudConfig').style.display = 
+                    this.value === 'host' ? 'flex' : 'none';
+            });
+        }
+
+        // 登录验证
+        function attemptLogin() {
+            const account = document.getElementById('loginAccount').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            if (account === ADMIN_ACCOUNT && password === ADMIN_PASSWORD) {
+                isAuthenticated = true;
+                hideLogin();
+                document.querySelector('[data-target="manage"]').click();
+            } else {
+                alert("账号或密码错误！");
+                document.getElementById('loginPassword').value = '';
+            }
+        }
+
+        function showLogin() {
+            document.getElementById('loginModal').style.display = 'flex';
+        }
+
+        function hideLogin() {
+            document.getElementById('loginModal').style.display = 'none';
+        }
+
+        // 数据维护功能
+        function savePlan() {
+            const newPlan = {
+                name: document.getElementById('planName').value.trim(),
+                fee: Number(document.getElementById('planFee').value),
+                domesticData: Number(document.getElementById('domesticData').value),
+                localData: Number(document.getElementById('localData').value),
+                call: Number(document.getElementById('callTime').value),
+                remark: document.getElementById('remark').value.trim()
+            };
+
+            if (!validatePlan(newPlan)) return;
+
+            const existIndex = packages.findIndex(p => p.name === newPlan.name);
+            if (existIndex > -1) {
+                if (!confirm("套餐已存在，是否覆盖？")) return;
+                packages[existIndex] = newPlan;
+            } else {
+                packages.push(newPlan);
+            }
+
+            localStorage.setItem('telecomPlans', JSON.stringify(packages));
+            refreshPlanList();
+            clearForm();
+            alert("套餐保存成功！");
+        }
+
+        function validatePlan(plan) {
+            if (!plan.name || plan.name.length < 2) {
+                alert("套餐名称至少需要2个字符");
+                return false;
+            }
+            if (isNaN(plan.fee) || plan.fee < 0) {
+                alert("请输入有效的套餐金额");
+                return false;
+            }
+            return true;
+        }
+
+        function refreshPlanList() {
+            const tbody = document.getElementById('planList');
+            tbody.innerHTML = packages.map(plan => `
+                <tr>
+                    <td>${plan.name}</td>
+                    <td>${plan.fee}元</td>
+                    <td>${plan.domesticData}GB</td>
+                    <td>${plan.localData}GB</td>
+                    <td>${plan.call}分钟</td>
+                    <td>${plan.remark || '-'}</td>
+                    <td>
+                        <button onclick="editPlan('${plan.name}')">编辑</button>
+                        <button onclick="deletePlan('${plan.name}')" style="color:red">删除</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function deletePlan(planName) {
+            if (!confirm(`确定删除 ${planName} 套餐吗？`)) return;
+            packages = packages.filter(p => p.name !== planName);
+            localStorage.setItem('telecomPlans', JSON.stringify(packages));
+            refreshPlanList();
+        }
+
+        function editPlan(planName) {
+            const plan = packages.find(p => p.name === planName);
+            document.getElementById('planName').value = plan.name;
+            document.getElementById('planFee').value = plan.fee;
+            document.getElementById('domesticData').value = plan.domesticData;
+            document.getElementById('localData').value = plan.localData;
+            document.getElementById('callTime').value = plan.call;
+            document.getElementById('remark').value = plan.remark;
+        }
+
+        function clearForm() {
+            document.querySelectorAll('#manage input').forEach(input => input.value = '');
+        }
+
+        // 查套餐功能
+        function searchPackage() {
+            const fee = Number(document.getElementById('packageFee').value);
+            const results = packages.filter(p => p.fee === fee);
+            
+            document.getElementById('packageResults').innerHTML = results.length > 0 
+                ? results.map(p => `
+                    <div class="result-card">
+                        <h3>${p.name}</h3>
+                        <p>价格：${p.fee}元/月</p>
+                        <p>流量：国内${p.domesticData}GB + 省内${p.localData}GB</p>
+                        <p>通话：${p.call}分钟</p>
+                        ${p.remark ? `<p>备注：${p.remark}</p>` : ''}
+                    </div>
+                `).join('')
+                : '<div class="result-card">未找到匹配套餐</div>';
+        }
+
+        // 查费用功能
+        function recommendPackage() {
+            const dataNeed = Number(document.getElementById('dataInput').value) || 0;
+            const callNeed = Number(document.getElementById('callInput').value) || 0;
+
+            const recommendations = packages
+                .map(p => ({
+                    ...p,
+                    totalData: p.domesticData + p.localData,
+                    score: Math.abs(p.totalData - dataNeed) + Math.abs(p.call - callNeed)
+                }))
+                .sort((a, b) => a.score - b.score)
+                .slice(0, 3);
+
+            document.getElementById('costResults').innerHTML = recommendations.map(p => `
+                <div class="result-card">
+                    <h3>${p.name}</h3>
+                    <p>匹配度：${100 - p.score}%</p>
+                    <p>价格：${p.fee}元/月</p>
+                    <p>总流量：${p.totalData}GB</p>
+                    <p>通话时长：${p.call}分钟</p>
+                </div>
+            `).join('');
+        }
+
+        // 云产品计算
+        function calculatePrice() {
+            const type = document.getElementById('cloudType').value;
+            let price = 0, config = '';
+            
+            if (type === 'host') {
+                const vcpu = Number(document.getElementById('vcpu').value) || 0;
+                const ram = Number(document.getElementById('ram').value) || 0;
+                price = vcpu * 45 + ram * 35;
+                config = `${vcpu}vCPU + ${ram}GB内存`;
+            } else {
+                price = 109;
+                config = "4vCPU + 8GB内存";
+            }
+
+            document.getElementById('cloudResults').innerHTML = `
+                <div class="result-card">
+                    <h3>${type === 'host' ? '云主机' : '云电脑'}</h3>
+                    <p>配置：${config}</p>
+                    <p style="color:#e60012; font-size:1.2em;">月费：${price}元</p>
+                </div>
+            `;
+        }
+
+        // 启动系统
+        init();
+    </script>
+</body>
+</html>
